@@ -44,6 +44,7 @@ public class UserController {
 	
 	@PostMapping("/signup")
 	public UserStdOutDTO signUp(@RequestBody ModelUser user) {
+		user.setEmail(user.getEmail().toLowerCase());
 		if(userServ.getUser(user.getEmail())!=null) {
 			return null;
 		}
