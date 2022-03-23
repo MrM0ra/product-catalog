@@ -1,14 +1,16 @@
 package com.nevu.products.back.rest;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.security.crypto.bcrypt.BCrypt;
 
 import com.nevu.products.back.entities.ModelUser;
-import com.nevu.products.back.entities.dto.UserLoginDTO;
+import com.nevu.products.back.entities.dto.Mapper;
+import com.nevu.products.back.entities.dto.UserStdInDTO;
+import com.nevu.products.back.entities.dto.UserStdOutDTO;
 import com.nevu.products.back.services.UserService;
 
 @RestController
@@ -18,34 +20,38 @@ public class UserController {
 	private UserService userServ;
 	
 	@Autowired
+	private Mapper mapper;
+	
+	@Autowired
 	public UserController(UserService userServ) {
 		this.userServ=userServ;
 	}
 	
 	@PostMapping("/login")
-	public String login(@RequestBody UserLoginDTO userLogin) {
+	public UserStdOutDTO login(@RequestBody UserStdInDTO userLogin) {
 		ModelUser user = userServ.getUser(userLogin.getEmail());
 		if(user != null) {
 			if(user.getPassword().equals(BCrypt.hashpw(userLogin.getPassword(), user.getSalt()))) {
-				return user.toString();
+				UserStdOutDTO out = mapper.toStdOutDTO(user);
+				return out;
 			}else {
-				return "Wrong password";
+				return null;
 			}
 		} else {
-			return "please register";
+			return null;
 		}
 	}
 	
 	@PostMapping("/signup")
-	public String signUp(@RequestBody ModelUser user) {
+	public UserStdOutDTO signUp(@RequestBody ModelUser user) {
 		if(userServ.getUser(user.getEmail())!=null) {
-			return "User already exists";
+			return null;
 		}
 		String salt = BCrypt.gensalt(12);
 		String hashed = BCrypt.hashpw(user.getPassword(), salt);
 		user.setSalt(salt);
 		user.setPassword(hashed);
-		return userServ.createUser(user).toString();
+		return mapper.toStdOutDTO(userServ.createUser(user));
 	}
 	
 	
